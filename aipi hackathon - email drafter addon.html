@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DraftEase — Difficult Message Drafter</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0f1b2d;
+    --navy-mid: #1a2e47;
+    --navy-light: #243b55;
+    --accent: #4f8ef7;
+    --accent-glow: rgba(79,142,247,0.18);
+    --accent2: #7dd3c0;
+    --cream: #f5f0e8;
+    --warm-white: #faf8f4;
+    --text-muted: #8a9bb5;
+    --border: rgba(255,255,255,0.07);
+    --card-bg: rgba(255,255,255,0.04);
+    --success: #5ec97b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--navy);
+    color: var(--warm-white);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* Background mesh */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -40%;
+    right: -20%;
+    width: 700px;
+    height: 700px;
+    background: radial-gradient(circle, rgba(79,142,247,0.08) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -30%;
+    left: -15%;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(125,211,192,0.06) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Header bar — Outlook-style */
+  .topbar {
+    width: 100%;
+    background: rgba(15,27,45,0.95);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+
+  .topbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .topbar-icon {
+    width: 28px;
+    height: 28px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+
+  .topbar-name {
+    font-family: 'DM Serif Display', serif;
+    font-size: 17px;
+    letter-spacing: -0.01em;
+    color: var(--warm-white);
+  }
+
+  .topbar-name span {
+    color: var(--accent);
+  }
+
+  .topbar-badge {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    padding: 3px 8px;
+    border-radius: 20px;
+  }
+
+  .topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .gmail-status {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .btn-topbar {
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.05);
+    color: var(--warm-white);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.18s ease;
+  }
+
+  .btn-topbar:hover {
+    border-color: var(--accent);
+    background: var(--accent-glow);
+  }
+
+  /* Main layout */
+  .main {
+    width: 100%;
+    max-width: 960px;
+    padding: 40px 24px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero {
+    margin-bottom: 36px;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .hero-eyebrow {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+
+  .hero h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(26px, 4vw, 38px);
+    line-height: 1.15;
+    color: var(--warm-white);
+    margin-bottom: 10px;
+  }
+
+  .hero h1 em {
+    font-style: italic;
+    color: var(--accent2);
+  }
+
+  .hero p {
+    font-size: 15px;
+    color: var(--text-muted);
+    font-weight: 300;
+    max-width: 500px;
+    line-height: 1.6;
+  }
+
+  /* Two-column layout */
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    animation: fadeUp 0.5s 0.1s ease both;
+  }
+
+  @media (max-width: 640px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    backdrop-filter: blur(8px);
+  }
+
+  .panel-full {
+    grid-column: 1 / -1;
+  }
+
+  .panel-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .panel-label .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: inline-block;
+  }
+
+  /* Select / chips */
+  .chip-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .chip {
+    padding: 7px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 400;
+    cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.04);
+    color: var(--text-muted);
+    transition: all 0.18s ease;
+    user-select: none;
+  }
+
+  .chip:hover {
+    border-color: var(--accent);
+    color: var(--warm-white);
+    background: var(--accent-glow);
+  }
+
+  .chip.active {
+    border-color: var(--accent);
+    background: var(--accent-glow);
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  /* Textarea */
+  textarea {
+    width: 100%;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    color: var(--warm-white);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 300;
+    line-height: 1.65;
+    padding: 14px 16px;
+    resize: none;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  textarea::placeholder { color: rgba(138,155,181,0.5); }
+
+  textarea:focus {
+    border-color: rgba(79,142,247,0.4);
+    background: rgba(79,142,247,0.04);
+  }
+
+  /* Generate button */
+  .btn-generate {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--accent) 0%, #3a6fd8 100%);
+    color: white;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.2s ease;
+    letter-spacing: 0.01em;
+    margin-top: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-generate::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .btn-generate:hover::before { opacity: 1; }
+  .btn-generate:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(79,142,247,0.3); }
+  .btn-generate:active { transform: translateY(0); }
+  .btn-generate:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* Output area */
+  .output-panel {
+    grid-column: 1 / -1;
+    margin-top: 4px;
+    display: none;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .output-panel.visible { display: block; }
+
+  .output-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .output-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .output-tag {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: 20px;
+    background: rgba(94,201,123,0.15);
+    color: var(--success);
+    border: 1px solid rgba(94,201,123,0.25);
+  }
+
+  .btn-copy {
+    padding: 7px 14px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.18s;
+  }
+
+  .btn-copy:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-glow);
+  }
+
+  .output-text {
+    font-size: 14.5px;
+    line-height: 1.75;
+    color: var(--warm-white);
+    font-weight: 300;
+    white-space: pre-wrap;
+    min-height: 120px;
+  }
+
+  .output-text .typing-cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1em;
+    background: var(--accent);
+    margin-left: 2px;
+    vertical-align: text-bottom;
+    animation: blink 0.8s step-end infinite;
+  }
+
+  /* Loading */
+  .loading-dots {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .loading-dots span {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: white;
+    animation: bounce 1.2s infinite ease-in-out;
+  }
+  .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+  /* Divider */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 16px 0;
+  }
+
+  /* Tone selector special styling */
+  .tone-chip.assertive.active { border-color: #f77b4f; color: #f77b4f; background: rgba(247,123,79,0.12); }
+  .tone-chip.warm.active { border-color: #f7c84f; color: #f7c84f; background: rgba(247,200,79,0.12); }
+  .tone-chip.professional.active { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
+  .tone-chip.apologetic.active { border-color: var(--accent2); color: var(--accent2); background: rgba(125,211,192,0.12); }
+  .tone-chip.direct.active { border-color: #b47ff7; color: #b47ff7; background: rgba(180,127,247,0.12); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes blink {
+    50% { opacity: 0; }
+  }
+
+  @keyframes bounce {
+    0%, 80%, 100% { transform: scale(0.7); opacity: 0.5; }
+    40% { transform: scale(1); opacity: 1; }
+  }
+
+  /* Error */
+  .error-msg {
+    color: #f77b7b;
+    font-size: 13px;
+    margin-top: 10px;
+    display: none;
+    padding: 10px 14px;
+    background: rgba(247,123,123,0.08);
+    border: 1px solid rgba(247,123,123,0.2);
+    border-radius: 8px;
+  }
+  .error-msg.visible { display: block; }
+
+  .archive-toggle {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .archive-toggle input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+    accent-color: var(--accent);
+  }
+
+  .archive-toggle-label {
+    font-size: 14px;
+    color: var(--warm-white);
+    line-height: 1.5;
+  }
+
+  .archive-toggle-help {
+    display: block;
+    margin-top: 3px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="topbar-icon">✉️</div>
+    <span class="topbar-name">Draft<span>Ease</span></span>
+  </div>
+  <div class="topbar-actions">
+    <span class="gmail-status" id="gmail-status">Gmail not connected</span>
+    <button class="btn-topbar" id="gmail-connect-btn" type="button" onclick="handleGmailConnection()">Connect Gmail</button>
+    <span class="topbar-badge">Outlook Add-in · Preview</span>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="hero">
+    <div class="hero-eyebrow">AI-Powered Message Drafting</div>
+    <h1>Say the <em>hard thing</em>,<br>beautifully.</h1>
+    <p>For the emails you've been putting off. Pick your scenario, set the tone, add context — and get a polished draft in seconds.</p>
+  </div>
+
+  <div class="layout">
+
+    <!-- Scenario -->
+    <div class="panel">
+      <div class="panel-label"><span class="dot"></span>Scenario</div>
+      <div class="chip-group" id="scenario-chips">
+        <div class="chip active" data-val="Apologizing for a mistake">🙏 Apology</div>
+        <div class="chip" data-val="Following up after no response">📬 Follow-up</div>
+        <div class="chip" data-val="Declining a request or offer">🚫 Declining</div>
+        <div class="chip" data-val="Delivering bad news">📉 Bad News</div>
+        <div class="chip" data-val="Asking for a raise or promotion">💼 Raise Ask</div>
+        <div class="chip" data-val="Setting a boundary with a colleague">🛑 Boundary</div>
+        <div class="chip" data-val="Giving constructive feedback">💬 Feedback</div>
+        <div class="chip" data-val="Addressing a conflict">⚡ Conflict</div>
+      </div>
+    </div>
+
+    <!-- Tone -->
+    <div class="panel">
+      <div class="panel-label"><span class="dot"></span>Tone</div>
+      <div class="chip-group" id="tone-chips">
+        <div class="chip tone-chip professional active" data-val="Professional and measured">🎯 Professional</div>
+        <div class="chip tone-chip warm" data-val="Warm and empathetic">🤝 Warm</div>
+        <div class="chip tone-chip assertive" data-val="Confident and assertive">💪 Assertive</div>
+        <div class="chip tone-chip apologetic" data-val="Apologetic and humble">🌿 Humble</div>
+        <div class="chip tone-chip direct" data-val="Direct and concise">⚡ Direct</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="panel-label" style="margin-bottom:10px"><span class="dot"></span>Format</div>
+      <div class="chip-group" id="format-chips">
+        <div class="chip active" data-val="formal email">📧 Email</div>
+        <div class="chip" data-val="short text message">💬 Text</div>
+        <div class="chip" data-val="Slack message">🔷 Slack</div>
+      </div>
+    </div>
+
+    <!-- Your context -->
+    <div class="panel panel-full">
+      <div class="panel-label"><span class="dot"></span>Your Situation <span style="color:rgba(138,155,181,0.5);font-weight:300;text-transform:none;letter-spacing:0;font-size:12px;margin-left:4px">(what happened, who is this to?)</span></div>
+      <textarea id="situation" rows="3" placeholder="e.g. I missed a deadline on a project my manager was counting on. She sent a frustrated email this morning. We have a good relationship normally..."></textarea>
+    </div>
+
+    <!-- Thread context -->
+    <div class="panel panel-full">
+      <div class="panel-label"><span class="dot"></span>Paste Previous Thread or Context <span style="color:rgba(138,155,181,0.5);font-weight:300;text-transform:none;letter-spacing:0;font-size:12px;margin-left:4px">(optional — paste emails, messages, or notes)</span></div>
+      <textarea id="thread" rows="4" placeholder="Paste the email thread, previous messages, or any background context here. The AI will tailor the draft to match the existing conversation..."></textarea>
+    </div>
+
+    <!-- Extra notes -->
+    <div class="panel panel-full">
+      <div class="panel-label"><span class="dot"></span>Extra Notes <span style="color:rgba(138,155,181,0.5);font-weight:300;text-transform:none;letter-spacing:0;font-size:12px;margin-left:4px">(optional — must-include points, boundaries, or desired outcome)</span></div>
+      <textarea id="notes" rows="3" placeholder="Optional: include facts that must be mentioned, boundaries you want to set, or the outcome you want from the message..."></textarea>
+    </div>
+
+    <div class="panel panel-full">
+      <div class="archive-toggle">
+        <input type="checkbox" id="use-gmail-archive">
+        <label for="use-gmail-archive" class="archive-toggle-label">
+          Let DraftEase read my Gmail archive for relevant context
+          <span class="archive-toggle-help">Off by default. Turn this on only when you want the draft to use messages from gmail_archive.json.</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="panel panel-full">
+      <div class="archive-toggle">
+        <input type="checkbox" id="use-live-gmail">
+        <label for="use-live-gmail" class="archive-toggle-label">
+          Let DraftEase read my live Gmail after I connect my account
+          <span class="archive-toggle-help">Only used when you turn this on. DraftEase will read recent Gmail messages through the Gmail API instead of the local archive file.</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Generate -->
+    <div class="panel panel-full" style="padding: 20px 24px;">
+      <button class="btn-generate" id="generate-btn" onclick="generate()">
+        <span id="btn-label">✨ Generate My Draft</span>
+      </button>
+      <div class="error-msg" id="error-msg"></div>
+    </div>
+
+    <!-- Output -->
+    <div class="panel panel-full output-panel" id="output-panel">
+      <div class="output-header">
+        <div class="output-meta">
+          <div class="panel-label" style="margin:0"><span class="dot" style="background:var(--success)"></span>Your Draft</div>
+          <span class="output-tag">Ready to send</span>
+        </div>
+        <button class="btn-copy" onclick="copyText()">
+          <span id="copy-icon">📋</span> <span id="copy-label">Copy</span>
+        </button>
+      </div>
+      <div class="output-text" id="output-text"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  let gmailConnected = false;
+
+  // Chip selection logic
+  function setupChips(groupId, multiSelect = false) {
+    const group = document.getElementById(groupId);
+    group.querySelectorAll('.chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        if (!multiSelect) {
+          group.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+        }
+        chip.classList.toggle('active');
+      });
+    });
+  }
+
+  setupChips('scenario-chips');
+  setupChips('tone-chips');
+  setupChips('format-chips');
+
+  function getActive(groupId) {
+    const group = document.getElementById(groupId);
+    return [...group.querySelectorAll('.chip.active')].map(c => c.dataset.val).join(', ');
+  }
+
+  async function refreshGmailStatus() {
+    try {
+      const response = await fetch('/api/google/status');
+      const data = await response.json();
+      gmailConnected = Boolean(data.connected);
+
+      const statusEl = document.getElementById('gmail-status');
+      const buttonEl = document.getElementById('gmail-connect-btn');
+
+      if (gmailConnected) {
+        statusEl.textContent = `Connected: ${data.email || 'Gmail account'}`;
+        buttonEl.textContent = 'Disconnect Gmail';
+      } else {
+        statusEl.textContent = 'Gmail not connected';
+        buttonEl.textContent = 'Connect Gmail';
+      }
+    } catch (err) {
+      gmailConnected = false;
+      document.getElementById('gmail-status').textContent = 'Gmail status unavailable';
+      document.getElementById('gmail-connect-btn').textContent = 'Connect Gmail';
+    }
+  }
+
+  async function handleGmailConnection() {
+    if (gmailConnected) {
+      await fetch('/api/google/disconnect', { method: 'POST' });
+      await refreshGmailStatus();
+      return;
+    }
+
+    const response = await fetch('/api/google/auth-url');
+    const data = await response.json();
+    if (!data.auth_url) {
+      showError('Could not start Gmail authorization.');
+      return;
+    }
+    window.location.href = data.auth_url;
+  }
+
+  async function generate() {
+    const scenario = getActive('scenario-chips');
+    const tone = getActive('tone-chips');
+    const format = getActive('format-chips');
+    const situation = document.getElementById('situation').value.trim();
+    const thread = document.getElementById('thread').value.trim();
+    const notes = document.getElementById('notes').value.trim();
+    const useGmailArchive = document.getElementById('use-gmail-archive').checked;
+    const useLiveGmail = document.getElementById('use-live-gmail').checked;
+
+    const btn = document.getElementById('generate-btn');
+    const errorMsg = document.getElementById('error-msg');
+    errorMsg.classList.remove('visible');
+
+    if (!scenario) { showError('Please select a scenario.'); return; }
+    if (!situation) { showError('Please describe your situation briefly.'); return; }
+    if (useLiveGmail && !gmailConnected) { showError('Connect Gmail before using live Gmail context.'); return; }
+
+    // Show loading
+    btn.disabled = true;
+    document.getElementById('btn-label').innerHTML = `<div class="loading-dots"><span></span><span></span><span></span></div>`;
+
+    const outputPanel = document.getElementById('output-panel');
+    const outputText = document.getElementById('output-text');
+    outputPanel.classList.add('visible');
+    outputText.innerHTML = '<span class="typing-cursor"></span>';
+
+    try {
+      const response = await fetch('/api/draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          scenario,
+          tone,
+          format,
+          situation,
+          thread,
+          notes,
+          use_gmail_archive: useGmailArchive,
+          use_live_gmail: useLiveGmail
+        })
+      });
+
+      if (!response.ok) {
+        const errorPayload = await response.json().catch(() => ({}));
+        throw new Error(errorPayload.detail || 'Draft request failed.');
+      }
+
+      const data = await response.json();
+      const text = data.draft || '';
+      if (!text) {
+        throw new Error('The API returned an empty draft.');
+      }
+
+      // Typewriter effect
+      outputText.innerHTML = '';
+      let i = 0;
+      const cursor = document.createElement('span');
+      cursor.className = 'typing-cursor';
+
+      function typeNext() {
+        if (i < text.length) {
+          outputText.textContent = text.slice(0, i + 1);
+          outputText.appendChild(cursor);
+          i++;
+          setTimeout(typeNext, 12);
+        } else {
+          cursor.remove();
+          outputText.textContent = text;
+        }
+      }
+      typeNext();
+
+    } catch (err) {
+      showError(err.message || 'Something went wrong. Please try again.');
+      outputPanel.classList.remove('visible');
+    }
+
+    btn.disabled = false;
+    document.getElementById('btn-label').innerHTML = '✨ Regenerate Draft';
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('error-msg');
+    el.textContent = msg;
+    el.classList.add('visible');
+  }
+
+  function copyText() {
+    const text = document.getElementById('output-text').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      document.getElementById('copy-icon').textContent = '✅';
+      document.getElementById('copy-label').textContent = 'Copied!';
+      setTimeout(() => {
+        document.getElementById('copy-icon').textContent = '📋';
+        document.getElementById('copy-label').textContent = 'Copy';
+      }, 2000);
+    });
+  }
+
+  refreshGmailStatus();
+</script>
+</body>
+</html>
