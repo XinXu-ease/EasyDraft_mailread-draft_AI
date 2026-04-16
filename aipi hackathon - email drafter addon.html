@@ -540,7 +540,7 @@
       <textarea id="notes" rows="3" placeholder="Optional: include facts that must be mentioned, boundaries you want to set, or the outcome you want from the message..."></textarea>
     </div>
 
-    <div class="panel panel-full">
+    <div class="panel panel-full" id="gmail-toggle-panel" style="display: none;">
       <div class="archive-toggle">
         <input type="checkbox" id="use-live-gmail">
         <label for="use-live-gmail" class="archive-toggle-label">
@@ -608,18 +608,22 @@
 
       const statusEl = document.getElementById('gmail-status');
       const buttonEl = document.getElementById('gmail-connect-btn');
+      const togglePanel = document.getElementById('gmail-toggle-panel');
 
       if (gmailConnected) {
         statusEl.textContent = `Connected: ${data.email || 'Gmail account'}`;
         buttonEl.textContent = 'Disconnect Gmail';
+        togglePanel.style.display = 'block';
       } else {
         statusEl.textContent = 'Gmail not connected';
         buttonEl.textContent = 'Connect Gmail';
+        togglePanel.style.display = 'none';
       }
     } catch (err) {
       gmailConnected = false;
       document.getElementById('gmail-status').textContent = 'Gmail status unavailable';
       document.getElementById('gmail-connect-btn').textContent = 'Connect Gmail';
+      document.getElementById('gmail-toggle-panel').style.display = 'none';
     }
   }
 
