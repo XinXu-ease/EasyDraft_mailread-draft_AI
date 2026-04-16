@@ -2,8 +2,14 @@ gmail_archive.json
 credentials.json
 token.json
 .env
-.env.example
 
 .venv/
 __pycache__/
 *.pyc
+*.pyo
+.DS_Store
+.idea/
+.vscode/settings.json
+*.egg-info/
+dist/
+build/

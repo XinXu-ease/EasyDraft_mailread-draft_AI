@@ -40,8 +40,8 @@ os.environ.setdefault("OAUTHLIB_RELAX_TOKEN_SCOPE", "1")
 
 ARCHIVE_PATH = Path(os.getenv("GMAIL_ARCHIVE_PATH", ROOT / "gmail_archive.json"))
 HTML_PATH = ROOT / "aipi hackathon - email drafter addon.html"
-CLIENT_SECRET_FILE = Path(os.getenv("GOOGLE_CLIENT_SECRET_FILE", ROOT / "credentials.json"))
 TOKEN_FILE = Path(os.getenv("GOOGLE_TOKEN_FILE", ROOT / "token.json"))
+GOOGLE_CLIENT_SECRET_JSON = os.getenv("GOOGLE_CLIENT_SECRET_JSON")
 MAX_CONTEXT_MESSAGES = int(os.getenv("MAX_CONTEXT_MESSAGES", "5"))
 MAX_BODY_CHARS = int(os.getenv("MAX_BODY_CHARS", "1200"))
 GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "http://127.0.0.1:8000/api/google/callback")
@@ -110,22 +110,7 @@ def normalize_base_url(url: str) -> str:
     return url.rstrip("/")
 
 
-def load_archive() -> list[dict[str, Any]]:
-    if not ARCHIVE_PATH.exists():
-        raise HTTPException(
-            status_code=500,
-            detail=f"Gmail archive not found at {ARCHIVE_PATH}",
-        )
 
-    try:
-        payload = json.loads(ARCHIVE_PATH.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as exc:
-        raise HTTPException(status_code=500, detail=f"Invalid archive JSON: {exc}") from exc
-
-    messages = payload.get("messages", [])
-    if not isinstance(messages, list):
-        raise HTTPException(status_code=500, detail="Archive format is invalid: 'messages' must be a list")
-    return messages
 
 
 def save_google_credentials(creds: Credentials) -> None:
@@ -146,11 +131,16 @@ def load_saved_google_credentials() -> Credentials | None:
 
 
 def build_google_flow(state: str | None = None) -> Flow:
-    if not CLIENT_SECRET_FILE.exists():
-        raise HTTPException(status_code=500, detail=f"Google client secrets file not found at {CLIENT_SECRET_FILE}")
+    if not GOOGLE_CLIENT_SECRET_JSON:
+        raise HTTPException(status_code=500, detail="GOOGLE_CLIENT_SECRET_JSON environment variable is not set")
 
-    flow = Flow.from_client_secrets_file(
-        str(CLIENT_SECRET_FILE),
+    try:
+        client_config = json.loads(GOOGLE_CLIENT_SECRET_JSON)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=500, detail=f"Invalid GOOGLE_CLIENT_SECRET_JSON: {exc}") from exc
+
+    flow = Flow.from_client_config(
+        client_config,
         scopes=GOOGLE_SCOPES,
         state=state,
         autogenerate_code_verifier=True,
@@ -306,7 +296,6 @@ def tokenize(text: str) -> set[str]:
 def build_live_gmail_queries(request: DraftRequest) -> list[str]:
     query_source = " ".join(
         [
-            request.scenario,
             request.situation,
             request.thread,
             request.notes,
@@ -326,33 +315,19 @@ def build_live_gmail_queries(request: DraftRequest) -> list[str]:
         seen.add(token)
         ordered_unique.append(token)
 
-    phrase_matches = re.findall(r"(amazon\s+fresh|whole\s+foods|order\s+number|tracking\s+number)", query_source)
-
-    if not ordered_unique and not phrase_matches:
-        return ["newer_than:90d"]
+    if not ordered_unique:
+        return ["newer_than:180d"]
 
     queries: list[str] = []
-    phrase_terms = [f"\"{phrase}\"" for phrase in phrase_matches[:3]]
     search_terms = ordered_unique[:6]
 
-    if phrase_terms:
-        for phrase in phrase_terms:
-            queries.append(f"newer_than:180d {phrase}")
-
+    # 双词组合查询
     if len(search_terms) >= 2:
         queries.append(f"newer_than:180d {search_terms[0]} {search_terms[1]}")
 
-    if search_terms:
-        queries.append(f"newer_than:180d {search_terms[0]}")
-
-    if "amazon" in ordered_unique:
-        queries.append("newer_than:365d amazon")
-    if "fresh" in ordered_unique:
-        queries.append("newer_than:365d fresh")
-    if "delivery" in ordered_unique:
-        queries.append("newer_than:365d delivery")
-    if "order" in ordered_unique:
-        queries.append("newer_than:365d order")
+    # 单个关键词查询
+    for term in search_terms:
+        queries.append(f"newer_than:180d {term}")
 
     deduped_queries: list[str] = []
     seen: set[str] = set()
@@ -458,8 +433,7 @@ def retrieve_ranked_context(
     return trimmed
 
 
-def retrieve_archive_context(request: DraftRequest) -> list[dict[str, Any]]:
-    return retrieve_ranked_context(request, load_archive(), source="archive")
+
 
 
 def retrieve_live_gmail_context(request: DraftRequest) -> list[dict[str, Any]]:
@@ -751,8 +725,6 @@ def google_disconnect() -> dict[str, bool]:
 def draft_email(req: DraftRequest) -> DraftResponse:
     context_matches: list[dict[str, Any]] = []
 
-    if req.use_gmail_archive:
-        context_matches.extend(retrieve_archive_context(req))
     if req.use_live_gmail:
         context_matches.extend(retrieve_live_gmail_context(req))
 

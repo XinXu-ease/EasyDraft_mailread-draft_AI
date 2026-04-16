@@ -460,33 +460,7 @@
   }
   .error-msg.visible { display: block; }
 
-  .archive-toggle {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-  }
-
-  .archive-toggle input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    margin-top: 2px;
-    accent-color: var(--accent);
-  }
-
-  .archive-toggle-label {
-    font-size: 14px;
-    color: var(--warm-white);
-    line-height: 1.5;
-  }
-
-  .archive-toggle-help {
-    display: block;
-    margin-top: 3px;
-    font-size: 12px;
-    color: var(--text-muted);
-  }
-
-</style>
+  </style>
 </head>
 <body>
 
@@ -568,20 +542,10 @@
 
     <div class="panel panel-full">
       <div class="archive-toggle">
-        <input type="checkbox" id="use-gmail-archive">
-        <label for="use-gmail-archive" class="archive-toggle-label">
-          Let DraftEase read my Gmail archive for relevant context
-          <span class="archive-toggle-help">Off by default. Turn this on only when you want the draft to use messages from gmail_archive.json.</span>
-        </label>
-      </div>
-    </div>
-
-    <div class="panel panel-full">
-      <div class="archive-toggle">
         <input type="checkbox" id="use-live-gmail">
         <label for="use-live-gmail" class="archive-toggle-label">
-          Let DraftEase read my live Gmail after I connect my account
-          <span class="archive-toggle-help">Only used when you turn this on. DraftEase will read recent Gmail messages through the Gmail API instead of the local archive file.</span>
+          Let DraftEase read my live Gmail after I connect my account.
+          <span class="archive-toggle-help">Only used when you turn this on.</span>
         </label>
       </div>
     </div>
@@ -682,7 +646,6 @@
     const situation = document.getElementById('situation').value.trim();
     const thread = document.getElementById('thread').value.trim();
     const notes = document.getElementById('notes').value.trim();
-    const useGmailArchive = document.getElementById('use-gmail-archive').checked;
     const useLiveGmail = document.getElementById('use-live-gmail').checked;
 
     const btn = document.getElementById('generate-btn');
@@ -713,7 +676,6 @@
           situation,
           thread,
           notes,
-          use_gmail_archive: useGmailArchive,
           use_live_gmail: useLiveGmail
         })
       });
